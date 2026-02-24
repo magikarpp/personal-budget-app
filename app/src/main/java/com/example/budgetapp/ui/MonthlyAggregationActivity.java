@@ -12,6 +12,7 @@ import android.widget.Spinner;
 
 import com.example.budgetapp.R;
 import com.example.budgetapp.data.local.AppDatabase;
+import com.example.budgetapp.data.model.Category;
 import com.example.budgetapp.data.model.CategoryTotal;
 import com.example.budgetapp.data.model.Expense;
 import com.example.budgetapp.data.model.MonthlyTotal;
@@ -44,15 +45,25 @@ public class MonthlyAggregationActivity extends BaseActivity {
 
         CheckBox checkboxRent = findViewById(R.id.checkboxRent);
 
+        Spinner categoryFilterSpinner = findViewById(R.id.categoryFilterSpinner);
+
+        // Category Filter
+        ArrayList<String> categories = new ArrayList<>();
+        categories.add("All");
+        for (Category cat : Category.values()) {
+            categories.add(cat.name());
+        }
+
+        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, categories);
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        categoryFilterSpinner.setAdapter(categoryAdapter);
+
         List<MonthlyTotal> monthlyTotals = db.expenseDao().getMonthlyTotals();
 
         ListView monthExpenseList = findViewById(R.id.monthExpenseList);
         ArrayList<String> monthExpenses = new ArrayList<>();
 
-        ArrayAdapter<String> monthExpenseAdapter =
-                new ArrayAdapter<>(this,
-                        android.R.layout.simple_list_item_1,
-                        monthExpenses);
+        ArrayAdapter<String> monthExpenseAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, monthExpenses);
 
         monthExpenseList.setAdapter(monthExpenseAdapter);
 
@@ -102,31 +113,42 @@ public class MonthlyAggregationActivity extends BaseActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 // Pie chart
-
                 String selectedMonth = labels.get(position);
 
                 updatePieChart(selectedMonth, checkboxRent.isChecked(), db, pieChart);
 
                 // Monthly Expense List
-                monthExpenses.clear();
-
-                List<Expense> expensesForMonth =
-                        db.expenseDao().getExpensesForMonth(selectedMonth);
-
-                for (Expense expense : expensesForMonth) {
-                    monthExpenses.add(formatExpense(expense));
-                }
-
-                monthExpenseAdapter.notifyDataSetChanged();
+                String selectedCategory = categoryFilterSpinner.getSelectedItem().toString();
+                loadExpensesForMonthAndCategory(selectedMonth, selectedCategory, db, monthExpenses, monthExpenseAdapter);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
+        categoryFilterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedCategory = categories.get(position);
+
+                int monthPosition = spinner.getSelectedItemPosition();
+                if (monthPosition >= 0 && monthPosition < labels.size()) {
+                    String selectedMonth = labels.get(monthPosition);
+                    loadExpensesForMonthAndCategory(selectedMonth, selectedCategory, db, monthExpenses, monthExpenseAdapter);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
     }
 
-    private void updatePieChart(String month, boolean showRent, AppDatabase db, PieChart pieChart) {
+    private void updatePieChart(
+            String month,
+            boolean showRent,
+            AppDatabase db,
+            PieChart pieChart) {
         List<CategoryTotal> categoryTotals = db.expenseDao().getCategoryTotals(month);
 
         List<PieEntry> pieEntries = new ArrayList<>();
@@ -143,14 +165,30 @@ public class MonthlyAggregationActivity extends BaseActivity {
         ArrayList<Integer> colors = new ArrayList<>();
         for (PieEntry entry : pieEntries) {
             switch (entry.getLabel().toUpperCase()) {
-                case "GROCERY": colors.add(Color.parseColor("#fb7b77")); break;
-                case "DINING": colors.add(Color.parseColor("#fdc170")); break;
-                case "RENT": colors.add(Color.parseColor("#f3f87f")); break;
-                case "UTILITIES": colors.add(Color.parseColor("#98f786")); break;
-                case "HOBBY": colors.add(Color.parseColor("#69ebfc")); break;
-                case "ENTERTAINMENT": colors.add(Color.parseColor("#6d9efc")); break;
-                case "TRANSPORTATION": colors.add(Color.parseColor("#937df8")); break;
-                default: colors.add(Color.parseColor("#f78ef0")); break;
+                case "GROCERY":
+                    colors.add(Color.parseColor("#fb7b77"));
+                    break;
+                case "DINING":
+                    colors.add(Color.parseColor("#fdc170"));
+                    break;
+                case "RENT":
+                    colors.add(Color.parseColor("#f3f87f"));
+                    break;
+                case "UTILITIES":
+                    colors.add(Color.parseColor("#98f786"));
+                    break;
+                case "HOBBY":
+                    colors.add(Color.parseColor("#69ebfc"));
+                    break;
+                case "ENTERTAINMENT":
+                    colors.add(Color.parseColor("#6d9efc"));
+                    break;
+                case "TRANSPORTATION":
+                    colors.add(Color.parseColor("#937df8"));
+                    break;
+                default:
+                    colors.add(Color.parseColor("#f78ef0"));
+                    break;
             }
         }
         pieDataSet.setColors(colors);
@@ -164,12 +202,29 @@ public class MonthlyAggregationActivity extends BaseActivity {
     @SuppressLint("DefaultLocale")
     private String formatExpense(Expense expense) {
 
-        @SuppressLint("SimpleDateFormat") java.text.SimpleDateFormat sdf =
-                new java.text.SimpleDateFormat("MM/dd");
+        @SuppressLint("SimpleDateFormat") java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MM/dd");
 
-        return expense.name + " | $" +
-                String.format("%.2f", expense.amount)
-                + "\nDate: " + sdf.format(expense.date)
-                + " | Category: " + expense.category.name();
+        return expense.name + " | $" + String.format("%.2f", expense.amount) + "\nDate: " + sdf.format(expense.date) + " | Category: " + expense.category.name();
+    }
+
+    private void loadExpensesForMonthAndCategory(
+            String month,
+            String categoryFilter,
+            AppDatabase db,
+            ArrayList<String> monthExpenses,
+            ArrayAdapter<String> monthExpenseAdapter) {
+        monthExpenses.clear();
+
+        List<Expense> expensesForMonth = db.expenseDao().getExpensesForMonth(month);
+
+        for (Expense expense : expensesForMonth) {
+            // Filter by category if not "All"
+            if (!categoryFilter.equals("All") && !expense.category.name().equalsIgnoreCase(categoryFilter)) {
+                continue;
+            }
+            monthExpenses.add(formatExpense(expense));
+        }
+
+        monthExpenseAdapter.notifyDataSetChanged();
     }
 }
