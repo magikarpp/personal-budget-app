@@ -183,6 +183,18 @@ public class MonthlyAggregationActivity extends BaseActivity {
                 case "TRANSPORTATION":
                     colors.add(Color.parseColor("#937df8"));
                     break;
+                case "SUBSCRIPTIONS":
+                    colors.add(Color.parseColor("#434279"));
+                    break;
+                case "PETS":
+                    colors.add(Color.parseColor("#c43138"));
+                    break;
+                case "PERSONAL":
+                    colors.add(Color.parseColor("#9656a2"));
+                    break;
+                case "DONATION":
+                    colors.add(Color.parseColor("#ffc6ff"));
+                    break;
                 default:
                     colors.add(Color.parseColor("#f78ef0"));
                     break;

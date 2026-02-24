@@ -8,5 +8,9 @@ public enum Category {
     HOBBY,
     ENTERTAINMENT,
     TRANSPORTATION,
+    SUBSCRIPTIONS,
+    PETS,
+    PERSONAL,
+    DONATION,
     OTHER
 }
