@@ -5,11 +5,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Spinner;
 
 import com.example.budgetapp.R;
 import com.example.budgetapp.data.local.AppDatabase;
 import com.example.budgetapp.data.model.CategoryTotal;
+import com.example.budgetapp.data.model.Expense;
 import com.example.budgetapp.data.model.MonthlyTotal;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
@@ -39,6 +41,16 @@ public class MonthlyAggregationActivity extends BaseActivity {
         Spinner spinner = findViewById(R.id.monthSpinner);
 
         List<MonthlyTotal> monthlyTotals = db.expenseDao().getMonthlyTotals();
+
+        ListView monthExpenseList = findViewById(R.id.monthExpenseList);
+        ArrayList<String> monthExpenses = new ArrayList<>();
+
+        ArrayAdapter<String> monthExpenseAdapter =
+                new ArrayAdapter<>(this,
+                        android.R.layout.simple_list_item_1,
+                        monthExpenses);
+
+        monthExpenseList.setAdapter(monthExpenseAdapter);
 
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
@@ -85,6 +97,7 @@ public class MonthlyAggregationActivity extends BaseActivity {
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Pie chart
 
                 String selectedMonth = labels.get(position);
 
@@ -97,12 +110,6 @@ public class MonthlyAggregationActivity extends BaseActivity {
                         pieEntries.add(new PieEntry((float) ct.total, ct.category));
                     }
                 }
-
-//                PieDataSet pieDataSet = new PieDataSet(pieEntries, "Categories");
-//                PieData pieData = new PieData(pieDataSet);
-//
-//                pieChart.setData(pieData);
-//                pieChart.invalidate();
 
                 PieDataSet pieDataSet = new PieDataSet(pieEntries, "Categories");
 
@@ -125,11 +132,34 @@ public class MonthlyAggregationActivity extends BaseActivity {
                 pieChart.setUsePercentValues(false);
 
                 pieChart.invalidate();
+
+                // Monthly Expense List
+                monthExpenses.clear();
+
+                List<Expense> expensesForMonth =
+                        db.expenseDao().getExpensesForMonth(selectedMonth);
+
+                for (Expense expense : expensesForMonth) {
+                    monthExpenses.add(formatExpense(expense));
+                }
+
+                monthExpenseAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+    }
+
+    private String formatExpense(Expense expense) {
+
+        java.text.SimpleDateFormat sdf =
+                new java.text.SimpleDateFormat("MM/dd");
+
+        return expense.name + " | $" +
+                String.format("%.2f", expense.amount)
+                + " | Date: " + sdf.format(expense.date)
+                + " | Category: " + expense.category.name();
     }
 }

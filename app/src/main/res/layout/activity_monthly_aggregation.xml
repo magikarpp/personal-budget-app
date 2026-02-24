@@ -7,52 +7,78 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Main Content -->
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingLeft="16dp"
-        android:paddingTop="64dp"
-        android:paddingRight="16dp"
-        android:paddingBottom="64dp">
+        android:fillViewport="true">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+        <!-- Main Content -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            android:title="Monthly Aggregation"
-            android:textStyle="bold"
-            android:titleTextColor="@android:color/white"/>
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingLeft="16dp"
+            android:paddingTop="64dp"
+            android:paddingRight="16dp"
+            android:paddingBottom="64dp">
 
-        <Space
-            android:layout_width="wrap_content"
-            android:layout_height="24dp" />
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary"
+                android:title="Monthly Aggregation"
+                android:textStyle="bold"
+                android:titleTextColor="@android:color/white"/>
 
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/barChart"
-            android:layout_width="match_parent"
-            android:layout_height="300dp" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="24dp" />
 
-        <Space
-            android:layout_width="wrap_content"
-            android:layout_height="24dp" />
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/barChart"
+                android:layout_width="match_parent"
+                android:layout_height="300dp" />
 
-        <Spinner
-            android:id="@+id/monthSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="24dp" />
 
-        <Space
-            android:layout_width="wrap_content"
-            android:layout_height="24dp" />
+            <Spinner
+                android:id="@+id/monthSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-        <com.github.mikephil.charting.charts.PieChart
-            android:id="@+id/pieChart"
-            android:layout_width="match_parent"
-            android:layout_height="300dp" />
-    </LinearLayout>
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="24dp" />
+
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/pieChart"
+                android:layout_width="match_parent"
+                android:layout_height="300dp" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="24dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Expenses for Selected Month"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <ListView
+                android:id="@+id/monthExpenseList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <Space
+                android:layout_width="wrap_content"
+                android:layout_height="48dp" />
+        </LinearLayout>
+    </ScrollView>
 
     <!-- Drawer Menu -->
     <com.google.android.material.navigation.NavigationView

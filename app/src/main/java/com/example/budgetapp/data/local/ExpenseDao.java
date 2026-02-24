@@ -31,13 +31,11 @@ public interface ExpenseDao {
             "ORDER BY date DESC")
     List<MonthlyTotal> getMonthlyTotals();
 
-    @Query("SELECT strftime('%Y-%m', date/1000, 'unixepoch') AS month, " +
-            "SUM(amount) as total " +
+    @Query("SELECT * " +
             "FROM expenses " +
-            "GROUP BY month " +
-            "ORDER BY date DESC " +
-            "LIMIT :limit")
-    List<MonthlyTotal> getMonthlyTotals(int limit);
+            "WHERE strftime('%Y-%m', date / 1000, 'unixepoch') = :month " +
+            "ORDER BY date DESC")
+    List<Expense> getExpensesForMonth(String month);
 
     @Query("SELECT category, " +
             "SUM(amount) as total " +
