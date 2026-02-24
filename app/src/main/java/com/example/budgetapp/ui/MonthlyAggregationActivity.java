@@ -1,10 +1,12 @@
 package com.example.budgetapp.ui;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.Spinner;
 
@@ -39,6 +41,8 @@ public class MonthlyAggregationActivity extends BaseActivity {
         BarChart barChart = findViewById(R.id.barChart);
         PieChart pieChart = findViewById(R.id.pieChart);
         Spinner spinner = findViewById(R.id.monthSpinner);
+
+        CheckBox checkboxRent = findViewById(R.id.checkboxRent);
 
         List<MonthlyTotal> monthlyTotals = db.expenseDao().getMonthlyTotals();
 
@@ -101,37 +105,7 @@ public class MonthlyAggregationActivity extends BaseActivity {
 
                 String selectedMonth = labels.get(position);
 
-                List<CategoryTotal> categoryTotals = db.expenseDao().getCategoryTotals(selectedMonth);
-
-                List<PieEntry> pieEntries = new ArrayList<>();
-
-                for (CategoryTotal ct : categoryTotals) {
-                    if (ct.total > 0) {
-                        pieEntries.add(new PieEntry((float) ct.total, ct.category));
-                    }
-                }
-
-                PieDataSet pieDataSet = new PieDataSet(pieEntries, "Categories");
-
-                ArrayList<Integer> colors = new ArrayList<>();
-                colors.add(Color.parseColor("#F44336"));
-                colors.add(Color.parseColor("#2196F3"));
-                colors.add(Color.parseColor("#4CAF50"));
-                colors.add(Color.parseColor("#FF9800"));
-                colors.add(Color.parseColor("#9C27B0"));
-
-                pieDataSet.setColors(colors);
-
-                pieDataSet.setSliceSpace(3f);
-                pieDataSet.setSelectionShift(5f);
-
-                PieData pieData = new PieData(pieDataSet);
-                pieChart.setData(pieData);
-
-                pieChart.getDescription().setEnabled(false);
-                pieChart.setUsePercentValues(false);
-
-                pieChart.invalidate();
+                updatePieChart(selectedMonth, checkboxRent.isChecked(), db, pieChart);
 
                 // Monthly Expense List
                 monthExpenses.clear();
@@ -152,14 +126,50 @@ public class MonthlyAggregationActivity extends BaseActivity {
         });
     }
 
+    private void updatePieChart(String month, boolean showRent, AppDatabase db, PieChart pieChart) {
+        List<CategoryTotal> categoryTotals = db.expenseDao().getCategoryTotals(month);
+
+        List<PieEntry> pieEntries = new ArrayList<>();
+
+        for (CategoryTotal ct : categoryTotals) {
+            if (ct.total > 0) {
+                if (!showRent && ct.category.equalsIgnoreCase("RENT")) continue;
+                pieEntries.add(new PieEntry((float) ct.total, ct.category));
+            }
+        }
+
+        PieDataSet pieDataSet = new PieDataSet(pieEntries, "Categories");
+
+        ArrayList<Integer> colors = new ArrayList<>();
+        for (PieEntry entry : pieEntries) {
+            switch (entry.getLabel().toUpperCase()) {
+                case "GROCERY": colors.add(Color.parseColor("#fb7b77")); break;
+                case "DINING": colors.add(Color.parseColor("#fdc170")); break;
+                case "RENT": colors.add(Color.parseColor("#f3f87f")); break;
+                case "UTILITIES": colors.add(Color.parseColor("#98f786")); break;
+                case "HOBBY": colors.add(Color.parseColor("#69ebfc")); break;
+                case "ENTERTAINMENT": colors.add(Color.parseColor("#6d9efc")); break;
+                case "TRANSPORTATION": colors.add(Color.parseColor("#937df8")); break;
+                default: colors.add(Color.parseColor("#f78ef0")); break;
+            }
+        }
+        pieDataSet.setColors(colors);
+
+        PieData pieData = new PieData(pieDataSet);
+        pieChart.setData(pieData);
+        pieChart.getDescription().setEnabled(false);
+        pieChart.invalidate();
+    }
+
+    @SuppressLint("DefaultLocale")
     private String formatExpense(Expense expense) {
 
-        java.text.SimpleDateFormat sdf =
+        @SuppressLint("SimpleDateFormat") java.text.SimpleDateFormat sdf =
                 new java.text.SimpleDateFormat("MM/dd");
 
         return expense.name + " | $" +
                 String.format("%.2f", expense.amount)
-                + " | Date: " + sdf.format(expense.date)
+                + "\nDate: " + sdf.format(expense.date)
                 + " | Category: " + expense.category.name();
     }
 }
