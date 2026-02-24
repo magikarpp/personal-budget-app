@@ -1,6 +1,7 @@
 package com.example.budgetapp.data.local;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 
@@ -20,6 +21,9 @@ public interface ExpenseDao {
             "FROM expenses " +
             "ORDER BY date DESC")
     List<Expense> getAllExpenses();
+
+    @Delete
+    void delete(Expense expense);
 
     @Query("DELETE FROM expenses")
     void deleteAll();

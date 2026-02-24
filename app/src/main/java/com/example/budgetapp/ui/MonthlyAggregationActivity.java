@@ -72,9 +72,6 @@ public class MonthlyAggregationActivity extends BaseActivity {
 
         // Bar Chart Logic
         for (int i = monthlyTotals.size() - 1, counter = 0; i >= 0; i--, counter++) {
-            System.out.println(monthlyTotals.get(i).month);
-            System.out.println(monthlyTotals.get(i).total);
-
             entries.add(new BarEntry(counter, (float) monthlyTotals.get(i).total));
 
             labels.add(monthlyTotals.get(i).month);

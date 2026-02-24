@@ -2,28 +2,22 @@ package com.example.budgetapp.ui;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.budgetapp.R;
 import com.example.budgetapp.data.local.AppDatabase;
 import com.example.budgetapp.data.model.Category;
 import com.example.budgetapp.data.model.Expense;
-
-import com.github.mikephil.charting.charts.BarChart;
-import com.github.mikephil.charting.charts.PieChart;
-import com.google.android.material.navigation.NavigationView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -38,14 +32,13 @@ public class MainActivity extends BaseActivity {
     private EditText editExpenseName, editExpenseAmount;
 
     private ArrayList<String> expenseList;
-    private ArrayAdapter<String> expenseAdapter;
+    private ExpenseAdapter expenseAdapter;
+    private RecyclerView recyclerExpenses;
 
     private Spinner spinnerCategory;
 
     private Button buttonDate;
     private Date selectedDate;
-
-    private double totalSpent = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,11 +50,48 @@ public class MainActivity extends BaseActivity {
         editExpenseName = findViewById(R.id.editExpenseName);
         editExpenseAmount = findViewById(R.id.editExpenseAmount);
         Button buttonAdd = findViewById(R.id.buttonAdd);
-        ListView listExpenses = findViewById(R.id.listExpenses);
+
+        recyclerExpenses = findViewById(R.id.recyclerExpenses);
+
         buttonDate = findViewById(R.id.buttonDate);
         spinnerCategory = findViewById(R.id.spinnerCategory);
 
         buttonAdd.setOnClickListener(view -> addExpense());
+
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                Expense expenseToDelete = expenseAdapter.getItem(position);
+
+                // Show confirmation dialog
+                new androidx.appcompat.app.AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Delete Expense")
+                        .setMessage("Are you sure you want to delete this expense?")
+                        .setPositiveButton("Delete", (dialog, which) -> {
+                            // Delete from database
+                            db.expenseDao().delete(expenseToDelete);
+                            // Remove from adapter
+                            expenseAdapter.removeItem(position);
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> {
+                            // Restore the swiped item visually
+                            expenseAdapter.notifyItemChanged(position);
+                            dialog.dismiss();
+                        })
+                        .setCancelable(false)
+                        .show();
+            }
+        };
+
+        new ItemTouchHelper(simpleItemTouchCallback).attachToRecyclerView(recyclerExpenses);
 
         // Date Picker Logic
         selectedDate = new Date();
@@ -98,13 +128,12 @@ public class MainActivity extends BaseActivity {
 
         for (Expense expense : savedExpenses) {
             expenseList.add(formatExpenseList(expense));
-            totalSpent += expense.amount;
         }
 
-        expenseAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, expenseList);
+        expenseAdapter = new ExpenseAdapter(savedExpenses);
 
-        listExpenses.setAdapter(expenseAdapter);
+        recyclerExpenses.setAdapter(expenseAdapter);
+        recyclerExpenses.setLayoutManager(new LinearLayoutManager(this));
     }
 
     private void addExpense() {
@@ -132,9 +161,10 @@ public class MainActivity extends BaseActivity {
         Expense expense = new Expense(name, amount, selectedDate, selectedCategory);
         db.expenseDao().insert(expense);
 
-        expenseList.add(0, formatExpenseList(expense));
+        expenseAdapter.addItem(expense);
 
-        totalSpent += amount;
+        expenseAdapter.notifyItemInserted(0);
+        recyclerExpenses.scrollToPosition(0);
 
         expenseAdapter.notifyDataSetChanged();
 
@@ -142,6 +172,7 @@ public class MainActivity extends BaseActivity {
         editExpenseAmount.setText("");
     }
 
+    @SuppressLint("DefaultLocale")
     private String formatExpenseList(Expense expense) {
         @SuppressLint("SimpleDateFormat")
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
