@@ -1,16 +1,11 @@
 package com.example.budgetapp.ui;
 
-import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
-
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.example.budgetapp.R;
 import com.example.budgetapp.data.local.AppDatabase;
@@ -18,13 +13,14 @@ import com.example.budgetapp.data.model.CategoryTotal;
 import com.example.budgetapp.data.model.MonthlyTotal;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
-import com.google.android.material.navigation.NavigationView;
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,14 +38,17 @@ public class MonthlyAggregationActivity extends BaseActivity {
         PieChart pieChart = findViewById(R.id.pieChart);
         Spinner spinner = findViewById(R.id.monthSpinner);
 
-        List<MonthlyTotal> monthlyTotals = db.expenseDao().getMonthlyTotals(6);
+        List<MonthlyTotal> monthlyTotals = db.expenseDao().getMonthlyTotals();
 
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
         // Bar Chart Logic
-        for (int i = 0; i < monthlyTotals.size(); i++) {
-            entries.add(new BarEntry(i, (float) monthlyTotals.get(i).total));
+        for (int i = monthlyTotals.size() - 1, counter = 0; i >= 0; i--, counter++) {
+            System.out.println(monthlyTotals.get(i).month);
+            System.out.println(monthlyTotals.get(i).total);
+
+            entries.add(new BarEntry(counter, (float) monthlyTotals.get(i).total));
 
             labels.add(monthlyTotals.get(i).month);
         }
@@ -58,6 +57,22 @@ public class MonthlyAggregationActivity extends BaseActivity {
         BarData barData = new BarData(dataSet);
 
         barChart.setData(barData);
+
+        barChart.setVisibleXRangeMaximum(5);
+
+        barChart.setDragEnabled(true);
+        barChart.setScaleXEnabled(true);
+        barChart.setPinchZoom(false);
+
+        barChart.moveViewToX(labels.size());
+
+        XAxis xAxis = barChart.getXAxis();
+
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setGranularity(1f);
+        xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+        xAxis.setDrawGridLines(false);
+
         barChart.invalidate();
 
         // Pie Chart Logic
@@ -83,10 +98,32 @@ public class MonthlyAggregationActivity extends BaseActivity {
                     }
                 }
 
-                PieDataSet pieDataSet = new PieDataSet(pieEntries, "Categories");
-                PieData pieData = new PieData(pieDataSet);
+//                PieDataSet pieDataSet = new PieDataSet(pieEntries, "Categories");
+//                PieData pieData = new PieData(pieDataSet);
+//
+//                pieChart.setData(pieData);
+//                pieChart.invalidate();
 
+                PieDataSet pieDataSet = new PieDataSet(pieEntries, "Categories");
+
+                ArrayList<Integer> colors = new ArrayList<>();
+                colors.add(Color.parseColor("#F44336"));
+                colors.add(Color.parseColor("#2196F3"));
+                colors.add(Color.parseColor("#4CAF50"));
+                colors.add(Color.parseColor("#FF9800"));
+                colors.add(Color.parseColor("#9C27B0"));
+
+                pieDataSet.setColors(colors);
+
+                pieDataSet.setSliceSpace(3f);
+                pieDataSet.setSelectionShift(5f);
+
+                PieData pieData = new PieData(pieDataSet);
                 pieChart.setData(pieData);
+
+                pieChart.getDescription().setEnabled(false);
+                pieChart.setUsePercentValues(false);
+
                 pieChart.invalidate();
             }
 
